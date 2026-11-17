@@ -27,15 +27,21 @@ export class CustomizeModePatcher {
    * @returns {string}
    */
   static #patchModuleSource(moduleSource) {
+    // Firefox 160+ declares `let window` inside CustomizeMode methods after
+    // earlier CustomizableUI uses, so rewriting to `window.CustomizableUI`
+    // throws a TDZ ReferenceError. Capture the global window under a name the
+    // module never declares instead.
     return (
+      "const sb2Window = window;\n" +
       moduleSource
         .replaceAll("CustomizableUI.getPlaceForItem", "getPlaceForItem")
-        .replace(/([^/])(CustomizableUI)(\.)/gm, "$1window.$2$3")
+        .replace(/([^/])(CustomizableUI)(\.)/gm, "$1sb2Window.$2$3")
         .replace("browser.hidden = true", "browser.hidden = false")
         .replace(
-          "window.CustomizableUI.removeListener",
+          "sb2Window.CustomizableUI.removeListener",
           "CustomizableUI.removeListener",
-        ) + getPlaceForItem.toString()
+        ) +
+      getPlaceForItem.toString()
     );
   }
 
