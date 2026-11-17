@@ -1,4 +1,5 @@
 import { BrowserElements } from "../browser_elements.mjs";
+import { PreferencesWrapper } from "../wrappers/preferences.mjs";
 import { SidebarControllers } from "../sidebar_controllers.mjs";
 import { SidebarElements } from "../sidebar_elements.mjs";
 import { WindowWrapper } from "../wrappers/window.mjs";
@@ -64,8 +65,25 @@ export class SidebarMainCollapser {
     );
   }
 
+  /**
+   * Firefox hides its own toolbars in fullscreen only when
+   * browser.fullscreen.autohide is true (the "Hide Toolbars" menu item; off
+   * by default on macOS). Follow the same pref for the sidebar.
+   *
+   * @returns {boolean}
+   */
+  #fullscreenAutoHide() {
+    return (
+      new WindowWrapper().fullScreen &&
+      PreferencesWrapper.getBoolPref("browser.fullscreen.autohide")
+    );
+  }
+
   onWindowFullscreen() {
     if (window.fullScreen) {
+      if (!this.#fullscreenAutoHide()) {
+        return;
+      }
       // Show sidebar and then immediately hide with fullscreen animation
       this.uncollapse({ animate: false, delay: 0 });
       setTimeout(() => {
@@ -116,7 +134,7 @@ export class SidebarMainCollapser {
   handleEvent(event) {
     const window = new WindowWrapper();
     if (
-      (!window.fullScreen &&
+      (!this.#fullscreenAutoHide() &&
         !SidebarControllers.sidebarController.autoHideSidebar) ||
       window.document.fullscreenElement
     ) {
