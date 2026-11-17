@@ -1,6 +1,7 @@
 import { WebPanelEvents, sendEvents } from "./events.mjs";
 
 import { SidebarElements } from "../sidebar_elements.mjs";
+import { URIFixupWrapper } from "../wrappers/uri_fixup.mjs";
 import { WindowWrapper } from "../wrappers/window.mjs";
 import { isLeftMouseButton } from "../utils/buttons.mjs";
 
@@ -15,8 +16,9 @@ export class WebPanelNewController {
 
     SidebarElements.webPanelPopupNew.listenSaveButtonClick(
       async (url, userContextId, temporary) => {
-        this.createWebPanel(url, userContextId, temporary);
-        this.hidePopup();
+        if (this.createWebPanel(url, userContextId, temporary)) {
+          this.hidePopup();
+        }
       },
     );
 
@@ -30,8 +32,15 @@ export class WebPanelNewController {
    * @param {string} url
    * @param {number} userContextId
    * @param {boolean} temporary
+   * @returns {boolean} false if the URL is invalid and no panel was created
    */
   createWebPanel(url, userContextId, temporary) {
+    try {
+      url = URIFixupWrapper.fixupURL(url);
+    } catch (error) {
+      console.log("Invalid url:", error);
+      return false;
+    }
     const uuid = crypto.randomUUID();
     sendEvents(WebPanelEvents.CREATE_WEB_PANEL, {
       uuid,
@@ -40,6 +49,7 @@ export class WebPanelNewController {
       temporary,
       newWebPanelPosition: this.newWebPanelPosition,
     });
+    return true;
   }
 
   openPopup() {

@@ -116,12 +116,12 @@ export class WebPanelsController {
       if (temporary) {
         if (isActiveWindow) {
           const webPanelController = await create();
-          webPanelController.switchWebPanel();
+          webPanelController?.switchWebPanel();
           setTimeout(() => this.#unwrapButtons(), 100);
         }
       } else {
         const webPanelController = await create();
-        if (isActiveWindow) {
+        if (webPanelController && isActiveWindow) {
           webPanelController.switchWebPanel();
         }
         setTimeout(() => this.#unwrapButtons(), 100);
